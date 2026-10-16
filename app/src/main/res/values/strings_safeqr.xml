@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="result_title_safe">안전</string>
+    <string name="result_title_warning">주의</string>
+    <string name="result_title_danger">위험</string>
+
+    <string name="result_desc_safe">알려진 위협이 발견되지 않았어요.</string>
+    <string name="result_desc_warning">의심스러운 요소가 있어요. 접속을 권장하지 않아요.</string>
+    <string name="result_desc_danger">악성으로 판단된 링크예요. 접속하지 마세요.</string>
+
+    <string name="result_score_format">위험도 %1$d점</string>
+    <string name="result_label_url">스캔한 주소</string>
+    <string name="result_label_reasons">판단 근거</string>
+    <string name="result_reason_bullet">•  %1$s</string>
+    <string name="result_no_reasons">세부 근거가 제공되지 않았어요.</string>
+
+    <string name="result_btn_open">접속하기</string>
+    <string name="result_btn_close">닫기</string>
+
+    <string name="browser_not_found">링크를 열 수 있는 브라우저가 없어요.</string>
+    <string name="browser_invalid_url">열 수 없는 주소 형식이에요.</string>
+
+    <string name="scan_analyzing">안전성 검사 중…</string>
+
+    <string name="tile_label">SafeQR 스캔</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 강조색: 아이콘, 제목, 버튼 -->
+    <color name="safeqr_safe">#1B8A3E</color>
+    <color name="safeqr_warning">#B26A00</color>
+    <color name="safeqr_danger">#C62828</color>
+
+    <!-- 헤더 카드 배경 (연한 톤) -->
+    <color name="safeqr_safe_container">#E6F4EA</color>
+    <color name="safeqr_warning_container">#FFF4D6</color>
+    <color name="safeqr_danger_container">#FDE7E7</color>
+
+    <color name="safeqr_url_box">#14000000</color>
+    <!-- 강조색 버튼 위의 글자·아이콘 색 -->
+    <color name="safeqr_on_accent">#FFFFFFFF</color>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 다크 모드: 강조색은 밝게, 배경은 어둡게 -->
+    <color name="safeqr_safe">#6DD58C</color>
+    <color name="safeqr_warning">#FFC94D</color>
+    <color name="safeqr_danger">#FF8A80</color>
+
+    <color name="safeqr_safe_container">#12301C</color>
+    <color name="safeqr_warning_container">#3A2C08</color>
+    <color name="safeqr_danger_container">#3D1414</color>
+
+    <color name="safeqr_url_box">#1FFFFFFF</color>
+    <!-- 다크 모드 강조색은 밝으므로 버튼 글자는 어둡게 -->
+    <color name="safeqr_on_accent">#FF0B1F12</color>
+</resources>
