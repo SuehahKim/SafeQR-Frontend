@@ -47,14 +47,14 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // CameraX (카메라 제어 기본 뼈대)
-    val cameraxVersion = "1.3.0"
+    val cameraxVersion = "1.6.2"      // 1.3.0 → 1.6.2
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
     // Google ML Kit (바코드 및 QR 초고속 스캔)
-    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")   // 17.2.0 → 17.3.0
 
     // Retrofit & Gson (서버 통신 및 JSON 데이터 변환 택배기사)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
