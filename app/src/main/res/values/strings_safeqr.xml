@@ -31,4 +31,8 @@
     <string name="confirm_open">접속하기</string>
     <string name="confirm_cancel">취소</string>
 
+    <string name="result_title_info">확인 필요</string>
+    <string name="result_desc_info">자동으로 실행하지 않았어요. 내용을 확인하세요.</string>
+    <string name="result_label_content">%1$s 내용</string>
+
 </resources>

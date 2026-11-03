@@ -13,6 +13,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.example.safeqr.scan.QrClassifier
 import com.example.safeqr.ui.ResultBottomSheet
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -43,11 +44,12 @@ class MainActivity : AppCompatActivity() {
     private var isScanning = true
 
     // 시트를 닫은 직후, 카메라 앞에 그대로 있는 같은 QR 이 곧바로 다시 인식되는 것을 막는 쿨다운
+    // (QR 원문 기준으로 비교)
     private var lastHandledUrl: String? = null
     private var lastHandledAt = 0L
 
-    // 앱이 백그라운드에 있을 때 서버 응답이 도착하면 여기에 보관했다가 돌아왔을 때 표시
-    private var pendingResult: Pair<String, AnalyzeResponse>? = null
+    // 앱이 백그라운드에 있을 때 결과가 나오면 여기에 보관했다가 돌아왔을 때 표시
+    private var pendingSheet: ResultBottomSheet? = null
 
     // 카메라 권한 팝업 처리
     private val requestPermissionLauncher =
@@ -97,10 +99,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPostResume() {
         super.onPostResume()
-        // 백그라운드에 있는 동안 도착한 결과가 있으면 이제 표시
-        pendingResult?.let { (url, result) ->
-            pendingResult = null
-            showResultSheet(url, result)
+        // 백그라운드에 있는 동안 나온 결과가 있으면 이제 표시
+        pendingSheet?.let {
+            pendingSheet = null
+            showSheet(it)
         }
     }
 
@@ -149,21 +151,41 @@ class MainActivity : AppCompatActivity() {
 
             scanner.process(image)
                 .addOnSuccessListener { barcodes ->
-                    // 한 프레임에 QR 이 여러 개 있어도 URL 하나만 처리 (기존 for 문은 여러 번 전송될 수 있었음)
-                    val url = barcodes.firstNotNullOfOrNull { barcode ->
-                        barcode.rawValue?.trim()?.takeIf(::isHttpUrl)
-                    } ?: return@addOnSuccessListener
-
                     // 프레임 처리 중에 다른 경로로 이미 멈췄을 수 있으므로 한 번 더 확인
                     if (!isScanning) return@addOnSuccessListener
 
+                    // 한 화면에 QR 이 여러 개면 웹 주소를 우선, 없으면 내용이 있는 첫 번째 QR 하나만 처리
+                    val barcode = barcodes.firstOrNull { b ->
+                        b.rawValue?.let { QrClassifier.toWebUrl(it) } != null
+                    } ?: barcodes.firstOrNull { !it.rawValue.isNullOrBlank() }
+                    ?: return@addOnSuccessListener
+
+                    val raw = barcode.rawValue!!.trim()
+
                     val now = SystemClock.elapsedRealtime()
-                    if (url == lastHandledUrl && now - lastHandledAt < SAME_URL_COOLDOWN_MS) {
+                    if (raw == lastHandledUrl && now - lastHandledAt < SAME_URL_COOLDOWN_MS) {
                         return@addOnSuccessListener
                     }
 
                     isScanning = false // 중복 스캔 방지
-                    requestAnalyze(url)
+
+                    // 허용 목록 방식: 웹 주소만 서버로 보내고, 나머지는 앱에서 판별해 내용만 보여 줌
+                    val webUrl = QrClassifier.toWebUrl(raw)
+                    if (webUrl != null) {
+                        requestAnalyze(webUrl, raw)
+                    } else {
+                        val r = QrClassifier.classify(barcode, raw)
+                        showSheet(
+                            ResultBottomSheet.forLocal(
+                                raw = raw,
+                                kind = r.kind,
+                                level = r.level,
+                                description = r.description,
+                                content = r.content,
+                                reasons = r.reasons,
+                            )
+                        )
+                    }
                 }
                 .addOnCompleteListener {
                     imageProxy.close() // 다음 프레임 분석을 위해 반드시 닫아주기
@@ -173,11 +195,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // QR 의 영숫자 모드는 대문자만 지원해서 "HTTPS://EXAMPLE.COM" 처럼 대문자 URL 이 흔함 → 대소문자 무시
-    private fun isHttpUrl(value: String): Boolean =
-        value.startsWith("http://", ignoreCase = true) || value.startsWith("https://", ignoreCase = true)
-
-    private fun requestAnalyze(url: String) {
+    /** url: 서버로 보낼 주소, raw: QR 원문 (쿨다운 비교용) */
+    private fun requestAnalyze(url: String, raw: String) {
         loadingOverlay.visibility = View.VISIBLE
 
         // 1. 스캔한 URL을 데이터 상자에 담기
@@ -194,8 +213,15 @@ class MainActivity : AppCompatActivity() {
 
                 if (response.isSuccessful && result != null) {
                     // 3. 성공: 시트를 띄우고, isScanning 은 시트가 닫힐 때 복구한다.
-                    //    (여기서 바로 복구하면 시트가 떠 있는 동안 같은 QR 이 계속 다시 인식됨)
-                    showResultSheet(url, result)
+                    showSheet(
+                        ResultBottomSheet.newInstance(
+                            url = url,
+                            level = result.level,
+                            score = result.score,
+                            reasons = result.reasons,
+                            key = raw,
+                        )
+                    )
                 } else {
                     Toast.makeText(this@MainActivity, "서버 응답 오류 (코드: ${response.code()})", Toast.LENGTH_SHORT).show()
                     isScanning = true // 실패했으니 다시 스캔할 수 있게 열어줌 (본문이 비어 있는 경우 포함)
@@ -210,21 +236,16 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun showResultSheet(url: String, result: AnalyzeResponse) {
+    private fun showSheet(sheet: ResultBottomSheet) {
         // 백그라운드 상태에서는 Fragment 를 띄울 수 없음 → 보관했다가 onPostResume 에서 표시
         if (supportFragmentManager.isStateSaved) {
-            pendingResult = url to result
+            pendingSheet = sheet
             return
         }
         // 이미 떠 있으면 중복 표시 방지
         if (supportFragmentManager.findFragmentByTag(ResultBottomSheet.TAG) != null) return
 
-        ResultBottomSheet.newInstance(
-            url = url,
-            level = result.level,
-            score = result.score,
-            reasons = result.reasons,
-        ).show(supportFragmentManager, ResultBottomSheet.TAG)
+        sheet.show(supportFragmentManager, ResultBottomSheet.TAG)
     }
 
     override fun onDestroy() {

@@ -13,4 +13,8 @@
     <color name="safeqr_url_box">#14000000</color>
     <!-- 강조색 버튼 위의 글자·아이콘 색 -->
     <color name="safeqr_on_accent">#FFFFFFFF</color>
+
+    <!-- 확인 필요(정보): Wi-Fi·전화 등 위험 신호가 없는 비 URL QR -->
+    <color name="safeqr_info">#3F5A75</color>
+    <color name="safeqr_info_container">#E7EDF3</color>
 </resources>

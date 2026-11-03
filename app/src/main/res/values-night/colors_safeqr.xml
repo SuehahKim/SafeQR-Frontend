@@ -12,4 +12,7 @@
     <color name="safeqr_url_box">#1FFFFFFF</color>
     <!-- 다크 모드 강조색은 밝으므로 버튼 글자는 어둡게 -->
     <color name="safeqr_on_accent">#FF0B1F12</color>
+
+    <color name="safeqr_info">#A9C3DC</color>
+    <color name="safeqr_info_container">#1B2632</color>
 </resources>
