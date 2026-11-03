@@ -35,4 +35,8 @@
     <string name="result_desc_info">자동으로 실행하지 않았어요. 내용을 확인하세요.</string>
     <string name="result_label_content">%1$s 내용</string>
 
+    <string name="result_btn_action_anyway">그래도 %1$s</string>
+    <string name="confirm_msg_local">주의가 필요한 내용이에요. 열리는 화면에서 번호나 네트워크 이름을 다시 확인한 뒤 진행하세요.</string>
+    <string name="confirm_proceed">열기</string>
+
 </resources>

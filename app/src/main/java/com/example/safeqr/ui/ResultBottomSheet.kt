@@ -17,6 +17,7 @@ import androidx.core.os.bundleOf
 import androidx.core.widget.TextViewCompat
 import com.example.safeqr.R
 import com.example.safeqr.browser.SafeBrowser
+import com.example.safeqr.scan.QrAction
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -87,6 +88,7 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
         val description = args.getString(ARG_DESC)
         val content = args.getString(ARG_CONTENT) ?: url
         val openable = args.getBoolean(ARG_OPENABLE, true)
+        val action = args.getBundle(ARG_ACTION)?.let { QrAction.fromBundle(it) }  // Wi-Fi·전화·문자·메일
 
         val ctx = requireContext()
         val accent = ContextCompat.getColor(ctx, level.accentRes)
@@ -140,25 +142,47 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
             })
         }
 
-        // 4) 버튼 (웹 주소일 때만 접속 가능)
+        // 4) 버튼
+        //  - 웹 주소: 안전이면 '접속하기', 주의·위험이면 '그래도 접속하기' → 확인 팝업
+        //  - Wi-Fi·전화·문자·메일: 확인 필요면 '전화 앱으로 열기' 등, 주의면 '그래도 …' → 확인 팝업
+        //  - 그 외(알 수 없는 형식·텍스트): 닫기만
+        val risky = level == Level.WARNING || level == Level.DANGER
         view.findViewById<MaterialButton>(R.id.btnOpen).apply {
-            visibility = if (openable && level == Level.SAFE) View.VISIBLE else View.GONE
+            visibility = when {
+                openable -> if (level == Level.SAFE) View.VISIBLE else View.GONE
+                action != null -> if (!risky) View.VISIBLE else View.GONE
+                else -> View.GONE
+            }
             backgroundTintList = ColorStateList.valueOf(accent)
             // 배경만 바꾸면 글자가 테마 기본색으로 남아 잘 안 보이므로 글자·아이콘 색도 함께 지정
             val onAccent = ContextCompat.getColor(ctx, R.color.safeqr_on_accent)
             setTextColor(onAccent)
             iconTint = ColorStateList.valueOf(onAccent)
+            if (action != null) {
+                text = action.label
+                icon = null
+            }
             setOnClickListener {
-                SafeBrowser.open(requireActivity(), url)
+                if (action != null) action.launch(requireActivity()) else SafeBrowser.open(requireActivity(), url)
                 dismiss()
             }
         }
-        // 주의·위험: 기본은 막되, 사용자가 확인 팝업을 한 번 더 거치면 접속 가능
+        // 주의·위험: 기본은 막되, 사용자가 확인 팝업을 한 번 더 거치면 진행 가능
         view.findViewById<MaterialButton>(R.id.btnOpenAnyway).apply {
-            val risky = level == Level.WARNING || level == Level.DANGER
-            visibility = if (openable && risky) View.VISIBLE else View.GONE
+            visibility = if (risky && (openable || action != null)) View.VISIBLE else View.GONE
             setTextColor(accent)
-            setOnClickListener { confirmRiskyOpen(level) }
+            if (action != null) text = getString(R.string.result_btn_action_anyway, action.label)
+            setOnClickListener {
+                if (action != null) {
+                    confirm(getString(R.string.confirm_msg_local) + "\n\n" + content, R.string.confirm_proceed) {
+                        action.launch(requireActivity())
+                    }
+                } else {
+                    val msg = if (level == Level.DANGER) R.string.confirm_msg_danger else R.string.confirm_msg_warning
+                    // 실제로 열릴 주소를 한 번 더 보여 줌
+                    confirm(getString(msg) + "\n\n" + url, R.string.confirm_open) { SafeBrowser.open(requireActivity(), url) }
+                }
+            }
         }
         view.findViewById<MaterialButton>(R.id.btnClose).setOnClickListener { dismiss() }
     }
@@ -183,15 +207,14 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
-    /** 위험 링크 접속 전 마지막 확인. 기본 선택은 '취소' 쪽으로 둔다. */
-    private fun confirmRiskyOpen(level: Level) {
-        val message = if (level == Level.DANGER) R.string.confirm_msg_danger else R.string.confirm_msg_warning
+    /** 주의·위험 항목을 열기 전 마지막 확인. 기본 선택은 '취소' 쪽으로 둔다. */
+    private fun confirm(message: String, @StringRes positive: Int, onConfirm: () -> Unit) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.confirm_title)
-            .setMessage(getString(message) + "\n\n" + url)   // 실제로 열릴 주소를 한 번 더 보여 줌
+            .setMessage(message)
             .setNegativeButton(R.string.confirm_cancel, null)
-            .setPositiveButton(R.string.confirm_open) { _, _ ->
-                SafeBrowser.open(requireActivity(), url)
+            .setPositiveButton(positive) { _, _ ->
+                onConfirm()
                 dismiss()
             }
             .show()
@@ -214,6 +237,7 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
         private const val ARG_CONTENT = "arg_content"
         private const val ARG_OPENABLE = "arg_openable"
         private const val ARG_KEY = "arg_key"
+        private const val ARG_ACTION = "arg_action"
 
         /**
          * 웹 주소 결과 (서버 분석).
@@ -243,6 +267,7 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
             description: String,
             content: String,
             reasons: List<String>,
+            action: QrAction? = null,
         ) = ResultBottomSheet().apply {
             arguments = bundleOf(
                 ARG_URL to raw,
@@ -254,6 +279,7 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
                 ARG_CONTENT to content,
                 ARG_OPENABLE to false,
                 ARG_KEY to raw,
+                ARG_ACTION to action?.toBundle(),
             )
         }
     }

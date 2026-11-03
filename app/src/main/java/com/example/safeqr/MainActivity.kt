@@ -183,6 +183,7 @@ class MainActivity : AppCompatActivity() {
                                 description = r.description,
                                 content = r.content,
                                 reasons = r.reasons,
+                                action = r.action,
                             )
                         )
                     }

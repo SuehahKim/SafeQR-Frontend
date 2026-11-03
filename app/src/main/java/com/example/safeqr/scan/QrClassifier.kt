@@ -13,6 +13,7 @@ data class LocalResult(
     val description: String,  // 헤더 아래 한 줄 설명
     val content: String,       // 사람이 읽을 수 있게 정리한 QR 내용
     val reasons: List<String>, // 판단 근거
+    val action: QrAction? = null, // 사용자가 원하면 열어 줄 시스템 화면 (없으면 버튼 없음)
 )
 
 /**
@@ -85,6 +86,9 @@ object QrClassifier {
             // 비밀번호는 화면에 보여 주지 않음 (옆 사람이 볼 수 있음)
             content = "네트워크 이름: $ssid\n보안 방식: $security",
             reasons = reasons,
+            action = barcode.wifi?.ssid?.takeIf { it.isNotBlank() }?.let {
+                QrAction("wifi", it, barcode.wifi?.password, type ?: 0)
+            },
         )
     }
 
@@ -99,6 +103,7 @@ object QrClassifier {
             description = if (risky) "주의가 필요한 번호예요." else "전화번호가 담긴 QR이에요.",
             content = "전화번호: $number",
             reasons = reasons,
+            action = QrAction("dial", number),
         )
     }
 
@@ -118,6 +123,7 @@ object QrClassifier {
                 if (!message.isNullOrBlank()) append("\n내용: $message")
             },
             reasons = reasons,
+            action = number?.takeIf { it.isNotBlank() }?.let { QrAction("sms", it, message) },
         )
     }
 
@@ -142,6 +148,7 @@ object QrClassifier {
         description = "이메일 주소가 담긴 QR이에요.",
         content = "받는 주소: $address",
         reasons = listOf("자동으로 메일을 보내지 않았어요. 받는 주소가 맞는지 확인하세요."),
+        action = QrAction("email", address),
     )
 
     // ── 그 외 ──────────────────────────────────────────────────────────────
