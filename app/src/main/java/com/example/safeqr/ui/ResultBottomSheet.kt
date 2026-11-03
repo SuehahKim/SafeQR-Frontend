@@ -22,6 +22,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
  * 서버 분석 결과(level / score / reasons)를 보여주는 하단 시트.
@@ -131,6 +132,13 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
                 dismiss()
             }
         }
+        // 주의·위험: 기본은 막되, 사용자가 확인 팝업을 한 번 더 거치면 접속 가능
+        view.findViewById<MaterialButton>(R.id.btnOpenAnyway).apply {
+            visibility = if (level == Level.SAFE) View.GONE else View.VISIBLE
+            setTextColor(accent)
+            setOnClickListener { confirmRiskyOpen(level) }
+        }
+
         view.findViewById<MaterialButton>(R.id.btnClose).setOnClickListener { dismiss() }
     }
 
@@ -153,6 +161,19 @@ class ResultBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
+    /** 위험 링크 접속 전 마지막 확인. 기본 선택은 '취소' 쪽으로 둔다. */
+    private fun confirmRiskyOpen(level: Level) {
+        val message = if (level == Level.DANGER) R.string.confirm_msg_danger else R.string.confirm_msg_warning
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.confirm_title)
+            .setMessage(getString(message) + "\n\n" + url)   // 실제로 열릴 주소를 한 번 더 보여 줌
+            .setNegativeButton(R.string.confirm_cancel, null)
+            .setPositiveButton(R.string.confirm_open) { _, _ ->
+                SafeBrowser.open(requireActivity(), url)
+                dismiss()
+            }
+            .show()
+    }
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     companion object {

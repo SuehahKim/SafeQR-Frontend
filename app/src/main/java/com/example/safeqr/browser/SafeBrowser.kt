@@ -23,7 +23,8 @@ object SafeBrowser {
     private val ALLOWED_SCHEMES = setOf("http", "https")
 
     fun open(activity: Activity, rawUrl: String) {
-        val uri = runCatching { Uri.parse(rawUrl.trim()) }.getOrNull()
+        // 안드로이드는 스킴 대소문자를 구분하므로 HTTPS:// → https:// 로 정규화 (도메인 부분은 그대로)
+        val uri = runCatching { Uri.parse(rawUrl.trim()).normalizeScheme() }.getOrNull()
 
         // startsWith("http") 는 "httpx://", "http:javascript..." 같은 것도 통과시키므로
         // 실제로 여는 시점에 스킴과 호스트를 한 번 더 엄격하게 검사한다.

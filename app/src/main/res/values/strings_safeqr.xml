@@ -20,7 +20,15 @@
     <string name="browser_not_found">링크를 열 수 있는 브라우저가 없어요.</string>
     <string name="browser_invalid_url">열 수 없는 주소 형식이에요.</string>
 
-    <string name="scan_analyzing">안전성 검사 중…</string>
+    <string name="scan_analyzing">안전성 검사 중… (최대 1분)</string>
 
     <string name="tile_label">SafeQR 스캔</string>
+
+    <string name="result_btn_open_anyway">그래도 접속하기</string>
+    <string name="confirm_title">정말 접속할까요?</string>
+    <string name="confirm_msg_warning">의심스러운 요소가 발견된 링크예요. 접속하더라도 비밀번호나 개인정보는 입력하지 마세요.</string>
+    <string name="confirm_msg_danger">악성으로 판단된 링크예요. 접속하면 개인정보 유출이나 악성 앱 설치 피해가 생길 수 있어요.</string>
+    <string name="confirm_open">접속하기</string>
+    <string name="confirm_cancel">취소</string>
+
 </resources>

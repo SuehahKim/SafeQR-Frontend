@@ -116,6 +116,15 @@
             app:iconGravity="textStart" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenAnyway"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/result_btn_open_anyway"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClose"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
